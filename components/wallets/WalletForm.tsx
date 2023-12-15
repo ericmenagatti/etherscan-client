@@ -38,7 +38,6 @@ export const WalletForm: FC<IWalletForm> = ({ reload }) => {
 	});
 
 	const onSubmit = (values: z.infer<typeof formSchema>) => {
-		console.log(values);
 		fetch(`${process.env.NEXT_PUBLIC_API}/wallet`, {
 			method: "POST",
 			body: JSON.stringify(values),

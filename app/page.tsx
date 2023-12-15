@@ -1,7 +1,9 @@
 "use client";
 import { useMemo, useEffect, useState } from "react";
 import { WalletForm } from "@/components/wallets/WalletForm";
+import { Euro, DollarSign } from "lucide-react";
 import { Wallet } from "@/components/wallets/Wallet";
+import { IStatus } from "@/types/Status";
 import {
 	Select,
 	SelectContent,
@@ -10,17 +12,23 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { IWallet } from "@/types/Wallet";
 
 const HomePage = () => {
-	const [wallets, setWallets] = useState<any[]>();
+	const [wallets, setWallets] = useState<IWallet[]>();
 	const [sort, setSort] = useState("asc");
-	const [status, setStatus] = useState(null);
+	const [status, setStatus] = useState<IStatus>();
 	const [loading, setLoading] = useState(true);
 	const [reload, setReload] = useState(0);
 
+	const formatter = new Intl.NumberFormat("en-US", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 3,
+	});
+
 	const sortedWallets = useMemo(() => {
 		if (wallets) {
-			const sortedData: any[] = wallets!.sort((a: any, b: any) => {
+			const sortedData: IWallet[] = wallets!.sort((a: any, b: any) => {
 				if (sort === "asc") {
 					return b.favorite - a.favorite;
 				}
@@ -33,7 +41,9 @@ const HomePage = () => {
 	useEffect(() => {
 		loadWallets();
 		loadStatus();
-	}, [reload]);
+		refreshWallets();
+		refreshStatus();
+	}, [reload, sort]);
 
 	const loadWallets = () => {
 		setLoading(true);
@@ -59,6 +69,28 @@ const HomePage = () => {
 			});
 	};
 
+	const refreshWallets = () => {
+		fetch(`${process.env.NEXT_PUBLIC_API}/wallet`, {
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+			},
+		}).finally(() => {
+			setLoading(false);
+		});
+	};
+
+	const refreshStatus = () => {
+		fetch(`${process.env.NEXT_PUBLIC_API}/status`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+		}).finally(() => {
+			setLoading(false);
+		});
+	};
+
 	const reloadTrigger = () => {
 		setReload(reload + 1);
 	};
@@ -78,8 +110,16 @@ const HomePage = () => {
 			<div className="text-xl font-semibold px-4 py-3 mb-4 rounded border">
 				<WalletForm reload={reloadTrigger} />
 			</div>
-			<div className="flex flex-row place-content-between items-center text-xl font-semibold px-4 py-3 mb-4 rounded border">
+			<div className="flex flex-row max-[700px]:flex-col place-content-between items-center text-xl font-semibold px-4 py-3 mb-4 rounded border">
 				<div className="flex">Wallet List</div>
+				{status ? (
+					<div className="flex items-center">
+						<DollarSign className="h-5 w-5" />
+						{formatter.format(+status.eth_usd)} /
+						<Euro className="h-5 w-5" />
+						{formatter.format(+status.eth_eur)}
+					</div>
+				) : null}
 				<div className="flex justify-end">
 					<Select onValueChange={(d) => setSort(d)} value={sort}>
 						<SelectTrigger className="w-[130px]">
